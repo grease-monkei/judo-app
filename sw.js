@@ -1,4 +1,4 @@
-const CACHE_NAME = 'wr-judo-v36'; // Bumped version to force cache refresh on deploy
+const CACHE_NAME = 'wr-judo-v37'; // Bumped version to force cache refresh on deploy
 
 const ASSETS_TO_CACHE = [
   './',
@@ -11,6 +11,12 @@ const ASSETS_TO_CACHE = [
   './js/utils.js',
   './js/seed.js',
   './js/firebase-config.js',
+  './js/screens/signin.js',
+  './js/screens/manual.js',
+  './js/screens/attendance.js',
+  './js/screens/members.js',
+  './js/screens/settings.js',
+  './js/screens/schedule.js',
   './images/logo.png',
   './images/logo-white-red.png'
 ];

@@ -17,35 +17,65 @@ const DB = (() => {
 
     // ===== Generic Firestore Helpers =====
     async function getAll(collectionName) {
-        const snapshot = await db.collection(collectionName).get();
-        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        try {
+            const snapshot = await db.collection(collectionName).get();
+            return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        } catch (error) {
+            console.error(`DB Error: Failed to getAll from ${collectionName}`, error);
+            return [];
+        }
     }
 
     async function getById(collectionName, id) {
         if (!id) return undefined;
-        const doc = await db.collection(collectionName).doc(String(id)).get();
-        return doc.exists ? { id: doc.id, ...doc.data() } : undefined;
+        try {
+            const doc = await db.collection(collectionName).doc(String(id)).get();
+            return doc.exists ? { id: doc.id, ...doc.data() } : undefined;
+        } catch (error) {
+            console.error(`DB Error: Failed to getById from ${collectionName} (ID: ${id})`, error);
+            return undefined;
+        }
     }
 
     async function addDoc(collectionName, record) {
-        const docRef = await db.collection(collectionName).add(record);
-        return { ...record, id: docRef.id };
+        try {
+            const docRef = await db.collection(collectionName).add(record);
+            return { ...record, id: docRef.id };
+        } catch (error) {
+            console.error(`DB Error: Failed to addDoc to ${collectionName}`, error);
+            throw error; // Re-throw for caller to handle UI feedback
+        }
     }
 
     async function setDoc(collectionName, record) {
-        const { id, ...data } = record;
-        await db.collection(collectionName).doc(String(id)).set(data);
-        return record;
+        try {
+            const { id, ...data } = record;
+            await db.collection(collectionName).doc(String(id)).set(data);
+            return record;
+        } catch (error) {
+            console.error(`DB Error: Failed to setDoc in ${collectionName} (ID: ${record.id})`, error);
+            throw error;
+        }
     }
 
     async function removeDoc(collectionName, id) {
-        await db.collection(collectionName).doc(String(id)).delete();
+        try {
+            await db.collection(collectionName).doc(String(id)).delete();
+        } catch (error) {
+            console.error(`DB Error: Failed to removeDoc from ${collectionName} (ID: ${id})`, error);
+            throw error;
+        }
     }
 
     async function queryByField(collectionName, fieldName, value) {
-        const snapshot = await db.collection(collectionName)
-            .where(fieldName, '==', value).get();
-        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        try {
+            const snapshot = await db.collection(collectionName)
+                .where(fieldName, '==', value).get();
+            return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        } catch (error) {
+            console.error(`DB Error: Failed to queryByField in ${collectionName} (${fieldName} == ${value})`, error);
+            return [];
+        }
     }
 
     async function clearCollection(collectionName) {

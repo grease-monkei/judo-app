@@ -15,44 +15,50 @@ const App = (() => {
     let currentScreen = 'signin';
 
     async function init() {
-        // 1. Initialise UI utilities
+        // 🚀 Parallel Start: Clock and DB Open
+        const dbOpenPromise = DB.open();
         Utils.Clock.init();
 
         // 2. Ensure DB is open first
-        await DB.open();
+        await dbOpenPromise;
 
-        // 2. Run background tasks & data maintenance
-        // Sequential execution to avoid race conditions between deduplication and repair
-        await SeedData.seedIfEmpty();
-        await MemberImport.importIfNeeded();
-        await DB.Members.deduplicate();
-        await DB.Locations.deduplicate();
-        await DB.Schedules.deduplicate();
-        // Maintenance sync moved to manual button in Settings to preserve user data
+        // 3. Parallel Background Tasks & Data Maintenance
+        // These can run concurrently without race conditions
+        const maintenancePromise = Promise.all([
+            SeedData.seedIfEmpty(),
+            MemberImport.importIfNeeded(),
+            DB.Members.deduplicate(),
+            DB.Locations.deduplicate(),
+            DB.Schedules.deduplicate(),
+            DB.Settings.get('appPassword'),
+            DB.Settings.getCurrentLocationId()
+        ]);
 
-        // Check for app password lock
-        const appPassword = await DB.Settings.get('appPassword');
+        const [ , , , , , appPassword, locId] = await maintenancePromise;
+
+        // 4. Handle App Lock & Header UI in parallel with Navigation
+        const setupPromises = [];
+
         if (appPassword) {
-            await showAppLockScreen(appPassword);
+            setupPromises.push(showAppLockScreen(appPassword));
         }
 
-        // Set up navigation
+        if (locId) {
+            setupPromises.push(DB.Locations.getById(locId).then(loc => {
+                if (loc) {
+                    const locEl = document.getElementById('header-location-name');
+                    if (locEl) locEl.textContent = loc.name;
+                }
+            }));
+        }
+
+        // Setup button listeners (Sync)
         document.querySelectorAll('.nav-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 const screen = btn.dataset.screen;
                 if (screen) navigate(screen);
             });
         });
-
-        // Load current location into header
-        const locId = await DB.Settings.getCurrentLocationId();
-        if (locId) {
-            const loc = await DB.Locations.getById(locId);
-            if (loc) {
-                const locEl = document.getElementById('header-location-name');
-                if (locEl) locEl.textContent = loc.name;
-            }
-        }
 
         // PWA Install Logic
         const installBtn = document.getElementById('pwa-install-btn');
