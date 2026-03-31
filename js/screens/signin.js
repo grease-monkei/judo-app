@@ -111,12 +111,28 @@ const SignInScreen = (() => {
 
                 <div id="search-results"></div>
 
+                <div style="margin-top: 16px;">
+                    <button class="btn btn-gold btn-sm" id="signin-add-member-btn" style="width: 100%; padding: 12px; border-radius: var(--radius-lg); font-weight: 700;">
+                        + Create New Member
+                    </button>
+                </div>
+
                 <div style="margin-top: 20px;">
                     ${renderClassCards(todayClasses, currentClass, nextClass, isHighlighting)}
                 </div>
             </div>
         </div>
         `;
+
+        // Wire up Create New Member button
+        const addMemberBtn = document.getElementById('signin-add-member-btn');
+        if (addMemberBtn) {
+            addMemberBtn.addEventListener('click', () => {
+                MembersScreen.showMemberForm(null, (newMember) => {
+                    if (newMember) selectPendingMember(newMember.id);
+                });
+            });
+        }
 
         // Wire up search with debounce
         const searchInput = document.getElementById('signin-search');

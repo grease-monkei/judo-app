@@ -151,7 +151,10 @@ const MembersScreen = (() => {
     }
 
 
-    async function showMemberForm(memberId = null) {
+    let onSaveCallback = null;
+
+    async function showMemberForm(memberId = null, onSuccess = null) {
+        onSaveCallback = onSuccess;
         const member = memberId ? await DB.Members.getById(memberId) : null;
         const title = member ? 'Edit Member' : 'Add New Member';
 
@@ -230,11 +233,24 @@ const MembersScreen = (() => {
             const existing = await DB.Members.getById(memberId);
             await DB.Members.update({ ...existing, ...data });
         } else {
-            await DB.Members.add({ ...data, isActive: true, attendanceCount: 0 });
+            const currentLocationId = await DB.Settings.getCurrentLocationId();
+            const newMember = await DB.Members.add({ 
+                ...data, 
+                isActive: true, 
+                attendanceCount: 0,
+                primaryLocationId: currentLocationId 
+            });
+            
+            if (onSaveCallback) {
+                onSaveCallback(newMember);
+                onSaveCallback = null;
+            }
         }
 
         document.querySelector('.modal-overlay')?.remove();
-        await renderList();
+        if (App.getCurrentScreen() === 'members') {
+            await renderList();
+        }
     }
 
 

@@ -107,7 +107,8 @@ const DB = (() => {
                 birthday: member.birthday || null,
                 isActive: true,
                 attendanceCount: 0,
-                createdAt: new Date().toISOString()
+                createdAt: new Date().toISOString(),
+                primaryLocationId: member.primaryLocationId || null
             };
             return addDoc('members', record);
         },
