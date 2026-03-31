@@ -1250,12 +1250,30 @@ input[type="date"] {
 /* ===== RESPONSIVE ===== */
 @media (max-width: 480px) {
     .app-title {
-        font-size: 15px;
+        display: none; /* Hide title to save space */
+    }
+
+    #pwa-install-btn {
+        display: none !important; /* Hide secondary download button */
+    }
+
+    .header-right {
+        gap: 6px !important;
+    }
+
+    .header-clock {
+        font-size: 13px;
+        padding: 4px 10px;
+        min-width: 70px;
     }
 
     .header-location {
         font-size: 11px;
-        padding: 4px 8px;
+        padding: 4px 10px;
+        max-width: 120px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
     #main-content {
