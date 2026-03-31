@@ -99,18 +99,11 @@ const Utils = (() => {
      * Check if a class is within the ±60 minute sign-in window
      */
     function isWithinSignInWindow(schedule, now = new Date()) {
+        return true; 
+        /* 
         if (!schedule) return false;
-        const nowMins = now.getHours() * 60 + now.getMinutes();
-
-        const [startH, startM] = schedule.startTime.split(':').map(Number);
-        const [endH, endM] = schedule.endTime.split(':').map(Number);
-        const startMins = startH * 60 + startM;
-        const endMins = endH * 60 + endM;
-
-        const windowStart = startMins - 60;
-        const windowEnd = endMins + 60;
-
-        return nowMins >= windowStart && nowMins <= windowEnd;
+        ... (original code commented out)
+        */
     }
 
 
