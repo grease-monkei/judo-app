@@ -1,5 +1,3 @@
-[build]                                                                                                                                                                                                                                        command = ""
+[build]
+    command = ""
     publish = "."
-
-  [[secrets_scanning.exclusions]]
-    path = "js/firebase-config.js"
