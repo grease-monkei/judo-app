@@ -56,14 +56,12 @@ const SignInScreen = (() => {
             
             // Only highlight NEXT class if it's within 2 hours (120 mins)
             let nextClass = Utils.detectNextClass(allSchedules, currentClass, now);
-            /*
             if (nextClass) {
                 const [nH, nM] = nextClass.startTime.split(':').map(Number);
                 if ((nH * 60 + nM) - nowMins > 120) {
                     nextClass = null; // Too early to highlight
                 }
             }
-            */
             
             const isHighlighting = !!currentClass || !!nextClass;
 
