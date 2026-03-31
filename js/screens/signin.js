@@ -75,6 +75,10 @@ const SignInScreen = (() => {
                         <div class="stat-number">${todayCount}</div>
                         <div class="stat-label">Today's Sign-Ins</div>
                     </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="signin-clock" style="font-size: 28px;">--:-- --</div>
+                        <div class="stat-label">Pacific Time</div>
+                    </div>
                 </div>
 
                 <div class="form-group" style="margin-bottom: 12px;">
@@ -97,6 +101,18 @@ const SignInScreen = (() => {
                 </div>
             </div>
         `;
+
+        // Start Pacific Time clock
+        function updateClock() {
+            const el = document.getElementById('signin-clock');
+            if (!el) return;
+            el.textContent = new Date().toLocaleTimeString('en-US', { timeZone: 'America/Vancouver', hour: 'numeric', minute: '2-digit', hour12: true });
+        }
+        updateClock();
+        const clockInterval = setInterval(updateClock, 1000);
+        // Stop the clock when the screen is replaced
+        const observer = new MutationObserver(() => { if (!document.getElementById('signin-clock')) { clearInterval(clockInterval); observer.disconnect(); } });
+        observer.observe(document.getElementById('main-content'), { childList: true });
 
         // Wire up search with debounce
         const searchInput = document.getElementById('signin-search');
