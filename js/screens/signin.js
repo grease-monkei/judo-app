@@ -340,14 +340,23 @@ const SignInScreen = (() => {
                 return;
             }
 
+            // Look up location name for this schedule
+            const allLocations = await DB.Locations.getAll();
+            const location = allLocations.find(l => l.id === schedule.locationId);
+
             const record = await DB.Attendance.add({
                 memberId: member.id,
                 memberName: `${member.firstName} ${member.lastName}`,
                 classScheduleId: schedule.id,
                 className: schedule.name,
+                locationId: schedule.locationId || '',
+                locationName: location ? location.name : '',
                 date: today,
-                signInTime: new Date().getTime()
+                signInTime: new Date().toISOString()
             });
+
+            // Increment attendance count to match manual sign-in behaviour
+            await DB.Members.incrementAttendance(member.id);
 
             // Invalidate cache so the new record shows on next render
             invalidateTodayAttendance();
