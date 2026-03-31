@@ -10,10 +10,19 @@ const SignInScreen = (() => {
     // FIX: Cache today's attendance records for the session.
     // Re-fetched only after a sign-in or undo, not on every search keystroke.
     let _todayAttendanceCache = null;
+    let _cacheDate = null; // Track which date the cache belongs to
+
+    let isProcessing = false; // Prevent double-clicks
 
     async function getTodayAttendance() {
-        if (_todayAttendanceCache) return _todayAttendanceCache;
         const today = Utils.todayStr();
+        // Reset cache if date has changed (overnight scenario)
+        if (_cacheDate !== today) {
+            _todayAttendanceCache = null;
+            _cacheDate = today;
+        }
+
+        if (_todayAttendanceCache) return _todayAttendanceCache;
         _todayAttendanceCache = await DB.Attendance.getByDate(today);
         return _todayAttendanceCache;
     }
@@ -39,11 +48,21 @@ const SignInScreen = (() => {
             }));
 
             const now = new Date();
+            const nowMins = now.getHours() * 60 + now.getMinutes();
 
             // Always show all locations on the sign-in screen
             const todayClasses = Utils.getTodayClasses(allSchedules, null, now);
             const currentClass = Utils.detectCurrentClass(allSchedules, now);
-            const nextClass = Utils.detectNextClass(allSchedules, currentClass, now);
+            
+            // Only highlight NEXT class if it's within 2 hours (120 mins)
+            let nextClass = Utils.detectNextClass(allSchedules, currentClass, now);
+            if (nextClass) {
+                const [nH, nM] = nextClass.startTime.split(':').map(Number);
+                if ((nH * 60 + nM) - nowMins > 120) {
+                    nextClass = null; // Too early to highlight
+                }
+            }
+            
             const isHighlighting = !!currentClass || !!nextClass;
 
             const todayAttendance = await getTodayAttendance();
@@ -316,6 +335,9 @@ const SignInScreen = (() => {
 
 
     async function executeSignIn(memberId, classId) {
+        if (isProcessing) return;
+        isProcessing = true;
+
         try {
             // FIX: pendingMember is already loaded — reuse it instead of fetching again.
             // Only fall back to a DB fetch if called from a path that doesn't set pendingMember.
@@ -324,11 +346,15 @@ const SignInScreen = (() => {
                 : await DB.Members.getById(memberId);
 
             const schedule = await DB.Schedules.getById(classId);
-            if (!member || !schedule) return;
+            if (!member || !schedule) {
+                isProcessing = false;
+                return;
+            }
 
 
             if (!Utils.isWithinSignInWindow(schedule)) {
                 alert(`Sign-in for this class is currently closed.`);
+                isProcessing = false;
                 return;
             }
 
@@ -374,6 +400,8 @@ const SignInScreen = (() => {
         } catch (err) {
             console.error('Sign-in failed:', err);
             alert('Sign-in failed. Please try again.');
+        } finally {
+            isProcessing = false;
         }
     }
 

@@ -28,7 +28,7 @@ const App = (() => {
         await DB.Members.deduplicate();
         await DB.Locations.deduplicate();
         await DB.Schedules.deduplicate();
-        await DB.Maintenance.repairOrphanedSchedules();
+        // Maintenance sync moved to manual button in Settings to preserve user data
 
         // Check for app password lock
         const appPassword = await DB.Settings.get('appPassword');

@@ -174,6 +174,13 @@ const SettingsScreen = (() => {
                             <input type="file" accept=".json" style="display: none;" onchange="SettingsScreen.importData(event)">
                         </label>
                     </div>
+                    <div class="settings-item" onclick="SettingsScreen.fullSync()">
+                        <div class="settings-item-left">
+                            <span class="settings-item-title" style="font-weight: 700; color: var(--accent-gold);">Sync with Official Schedule</span>
+                            <span class="settings-item-subtitle" style="color: var(--accent-red);">Warning: This will REPLACE all current locations and classes.</span>
+                        </div>
+                        <div class="settings-item-right">›</div>
+                    </div>
                 </div>
             </div>
         `;
@@ -566,6 +573,19 @@ const SettingsScreen = (() => {
     }
 
 
+    async function fullSync() {
+        touchAuth();
+        if (!confirm('This will wipe all current locations and classes and reset them to the club\'s official schedule. Are you sure?')) return;
+        
+        try {
+            const count = await DB.Maintenance.fullSyncWithSeed();
+            alert(`Sync complete! ${count} official classes restored. The app will now reload.`);
+            window.location.reload();
+        } catch (err) {
+            alert('Sync failed: ' + err.message);
+        }
+    }
+    
     return {
         render,
         promptPin,
@@ -583,6 +603,7 @@ const SettingsScreen = (() => {
         editSchedule,
         deleteSchedule,
         exportData,
-        importData
+        importData,
+        fullSync
     };
 })();
