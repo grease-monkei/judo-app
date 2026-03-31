@@ -27,7 +27,6 @@ const SignInScreen = (() => {
         const container = document.getElementById('main-content');
 
         try {
-            const locId = await DB.Settings.getCurrentLocationId();
             const rawSchedules = await DB.Schedules.getAll();
             const allLocations = await DB.Locations.getAll();
             const locMap = {};
@@ -41,7 +40,8 @@ const SignInScreen = (() => {
 
             const now = new Date();
 
-            const todayClasses = Utils.getTodayClasses(allSchedules, locId !== 'all' ? locId : null, now);
+            // Always show all locations on the sign-in screen
+            const todayClasses = Utils.getTodayClasses(allSchedules, null, now);
             const currentClass = Utils.detectCurrentClass(allSchedules, now);
             const nextClass = Utils.detectNextClass(allSchedules, currentClass, now);
             const isHighlighting = !!currentClass || !!nextClass;
