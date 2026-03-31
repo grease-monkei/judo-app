@@ -330,6 +330,26 @@ const Utils = (() => {
         return `${y}-${m}-${day}`;
     }
 
+const Clock = (() => {
+        let timer;
+        function update() {
+            const el = document.getElementById('header-clock');
+            if (!el) return;
+            const now = new Date();
+            const h = now.getHours();
+            const m = String(now.getMinutes()).padStart(2, '0');
+            const period = h >= 12 ? 'PM' : 'AM';
+            const hour12 = h % 12 || 12;
+            el.textContent = `${hour12}:${m} ${period}`;
+        }
+        function init() {
+            update();
+            if (timer) clearInterval(timer);
+            timer = setInterval(update, 1000 * 30); // Update every 30s
+        }
+        return { init, update };
+    })();
+
     return {
         getJudoAgeCategory,
         detectCurrentClass,
@@ -352,6 +372,7 @@ const Utils = (() => {
         escapeHTML,
         getLocalDateStr,
         DAY_NAMES,
-        DAY_SHORT
+        DAY_SHORT,
+        Clock
     };
 })();

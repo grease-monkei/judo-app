@@ -15,7 +15,10 @@ const App = (() => {
     let currentScreen = 'signin';
 
     async function init() {
-        // 1. Ensure DB is open first
+        // 1. Initialise UI utilities
+        Utils.Clock.init();
+
+        // 2. Ensure DB is open first
         await DB.open();
 
         // 2. Run background tasks & data maintenance
