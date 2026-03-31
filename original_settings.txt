@@ -1,0 +1,664 @@
+﻿/**
+ * Settings Screen â€” PIN-protected admin settings
+ */
+
+const SettingsScreen = (() => {
+    let isAuthenticated = false;
+
+    async function render() {
+        const container = document.getElementById('main-content');
+        const hasPin = await DB.Settings.getPin();
+
+        // If PIN exists and not authenticated, show PIN prompt
+        if (hasPin && !isAuthenticated) {
+            showPinModal(() => {
+                isAuthenticated = true;
+                render();
+            });
+            // Show locked state
+            container.innerHTML = `
+                <div class="screen">
+                    <div class="empty-state">
+                        <span class="empty-state-icon">ðŸ”’</span>
+                        <h3 class="empty-state-title">Settings Locked</h3>
+                        <p class="empty-state-desc">Enter your PIN to access settings</p>
+                        <button class="btn btn-gold mt-16" onclick="SettingsScreen.promptPin()">Enter PIN</button>
+                    </div>
+                </div>
+            `;
+            return;
+        }
+
+        const currentLocId = await DB.Settings.getCurrentLocationId();
+        const locations = await DB.Locations.getAll();
+        const schedules = await DB.Schedules.getAll();
+        const currentLoc = currentLocId ? locations.find(l => l.id === currentLocId) : null;
+        const appPassword = await DB.Settings.get('appPassword');
+
+        container.innerHTML = `
+            <div class="screen" id="settings-screen">
+                <!-- Location Selection -->
+                <div class="settings-section">
+                    <div class="settings-section-title">ðŸ“ Current Location</div>
+                    <div class="card">
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <select class="form-select" id="settings-location-select">
+                                <option value="all" ${currentLocId === 'all' || !currentLocId ? 'selected' : ''}>All Locations (Default)</option>
+                                ${locations.map(l => `
+                                    <option value="${l.id}" ${l.id === currentLocId ? 'selected' : ''}>${Utils.escapeHTML(l.name)}</option>
+                                `).join('')}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Locations Management -->
+                <div class="settings-section">
+                    <div class="settings-section-title" style="display: flex; justify-content: space-between; align-items: center;">
+                        ðŸ¢ Locations
+                        <button class="btn btn-sm btn-secondary" id="add-location-btn">+ Add</button>
+                    </div>
+                    <div id="locations-list">
+                        ${locations.length === 0 ? `
+                            <div class="empty-state" style="padding: 20px;">
+                                <p class="empty-state-desc">No locations yet. Add one to get started.</p>
+                            </div>
+                        ` : locations.map(loc => `
+                            <div class="schedule-item">
+                                <div class="schedule-info">
+                                    <span class="schedule-name">${Utils.escapeHTML(loc.name)}</span>
+                                    <span class="schedule-detail">${Utils.escapeHTML(loc.address || 'No address')}</span>
+                                </div>
+                                <div class="schedule-actions">
+                                    <button class="btn-icon" onclick="SettingsScreen.editLocation('${loc.id}')" title="Edit">âœŽ</button>
+                                    <button class="btn-icon" onclick="SettingsScreen.deleteLocation('${loc.id}')" title="Delete" style="color: var(--accent-red);">âœ•</button>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+
+                <!-- Class Schedules -->
+                <div class="settings-section">
+                    <div class="settings-section-title" style="display: flex; justify-content: space-between; align-items: center;">
+                        ðŸ“… Class Schedules
+                        <button class="btn btn-sm btn-secondary" id="add-schedule-btn">+ Add</button>
+                    </div>
+                    <div id="schedules-list">
+                        ${schedules.length === 0 ? `
+                            <div class="empty-state" style="padding: 20px;">
+                                <p class="empty-state-desc">No class schedules yet. Add a location first, then add classes.</p>
+                            </div>
+                        ` : renderSchedulesList(schedules, locations)}
+                    </div>
+                </div>
+
+                <!-- PIN Settings -->
+                <div class="settings-section">
+                    <div class="settings-section-title">ðŸ” Security</div>
+                    <div class="settings-item" onclick="SettingsScreen.changePin()">
+                        <div class="settings-item-left">
+                            <span class="settings-item-title">${hasPin ? 'Change PIN' : 'Set PIN'}</span>
+                            <span class="settings-item-subtitle">${hasPin ? 'Change your 4-digit settings PIN' : 'Protect settings with a 4-digit PIN'}</span>
+                        </div>
+                        <span class="settings-item-right">â†’</span>
+                    </div>
+                    ${hasPin ? `
+                        <div class="settings-item" onclick="SettingsScreen.removePin()" style="margin-top: 2px;">
+                            <div class="settings-item-left">
+                                <span class="settings-item-title" style="color: var(--accent-red);">Remove PIN</span>
+                                <span class="settings-item-subtitle">Allow anyone to access settings</span>
+                            </div>
+                            <span class="settings-item-right">â†’</span>
+                        </div>
+                    ` : ''}
+                </div>
+
+                <!-- App Password -->
+                <div class="settings-section">
+                    <div class="settings-section-title">ðŸ”‘ App Password</div>
+                    <div class="settings-item" onclick="SettingsScreen.setAppPassword()">
+                        <div class="settings-item-left">
+                            <span class="settings-item-title">${appPassword ? 'Change App Password' : 'Set App Password'}</span>
+                            <span class="settings-item-subtitle">${appPassword ? 'Password is required to open the app' : 'Require a password when the app opens'}</span>
+                        </div>
+                        <span class="settings-item-right">â†’</span>
+                    </div>
+                    ${appPassword ? `
+                        <div class="settings-item" onclick="SettingsScreen.removeAppPassword()" style="margin-top: 2px;">
+                            <div class="settings-item-left">
+                                <span class="settings-item-title" style="color: var(--accent-red);">Remove App Password</span>
+                                <span class="settings-item-subtitle">Allow anyone to open the app</span>
+                            </div>
+                            <span class="settings-item-right">â†’</span>
+                        </div>
+                    ` : ''}
+                </div>
+
+                <!-- Data Management -->
+                <div class="settings-section">
+                    <div class="settings-section-title">ðŸ’¾ Data Management</div>
+                    <div class="settings-item" onclick="SettingsScreen.exportData()">
+                        <div class="settings-item-left">
+                            <span class="settings-item-title">Export All Data (JSON)</span>
+                            <span class="settings-item-subtitle">Download a full backup (Members, Schedules, etc.)</span>
+                        </div>
+                        <span class="settings-item-right">ðŸ“¥</span>
+                    </div>
+                    <div class="settings-item" onclick="SettingsScreen.exportAttendanceCSV()" style="margin-top: 2px;">
+                        <div class="settings-item-left">
+                            <span class="settings-item-title">Export Attendance (CSV)</span>
+                            <span class="settings-item-subtitle">Download sign-in history for Excel/Google Sheets</span>
+                        </div>
+                        <span class="settings-item-right">ðŸ“Š</span>
+                    </div>
+                    <div class="settings-item" onclick="SettingsScreen.importData(event)" style="margin-top: 2px;">
+                        <div class="settings-item-left">
+                            <span class="settings-item-title">Import Data</span>
+                            <span class="settings-item-subtitle">Restore from a JSON backup</span>
+                        </div>
+                        <span class="settings-item-right">ðŸ“¤</span>
+                    </div>
+                    <div class="settings-item" onclick="SettingsScreen.deduplicateMembers()" style="margin-top: 2px; border-top: 1px dashed var(--border-color); padding-top: 12px;">
+                        <div class="settings-item-left">
+                            <span class="settings-item-title" style="color: var(--accent-gold);">ðŸ§¹ Clean Duplicate Members</span>
+                            <span class="settings-item-subtitle">Merge redundant records and combine attendance</span>
+                        </div>
+                        <span class="settings-item-right">âœ¨</span>
+                    </div>
+                    <input type="file" id="import-data-input" accept=".json" style="display: none;" onchange="SettingsScreen.importData(event)">
+                </div>
+
+                <!-- App Info -->
+                <div class="settings-section">
+                    <div class="settings-section-title">â„¹ï¸ About</div>
+                    <div class="card" style="text-align: center; color: var(--text-muted); font-size: 13px;">
+                        <img src="images/logo-white-red.png" alt="White Rock Judo Club" style="height: 64px; margin-bottom: 8px;">
+                        <div style="font-weight: 600; color: var(--text-primary); font-size: 15px;">White Rock Judo Club</div>
+                        <div>Version 1.0.0</div>
+                        <div style="margin-top: 4px;">Data stored locally on this device</div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // Wire up events
+        document.getElementById('settings-location-select').addEventListener('change', async (e) => {
+            const val = e.target.value;
+            await DB.Settings.setCurrentLocationId(val);
+            if (val === 'all') {
+                document.getElementById('header-location-name').textContent = 'All Locations';
+            } else {
+                const loc = locations.find(l => String(l.id) === String(val));
+                document.getElementById('header-location-name').textContent = loc ? loc.name : 'Unknown Location';
+            }
+            SignInScreen.resetClassSelection();
+        });
+
+        document.getElementById('add-location-btn').addEventListener('click', () => showLocationForm());
+        document.getElementById('add-schedule-btn').addEventListener('click', () => {
+            if (locations.length === 0) {
+                alert('Please add a location first.');
+                return;
+            }
+            showScheduleForm(null, locations);
+        });
+    }
+
+    function renderSchedulesList(schedules, locations) {
+        // Group by location
+        const byLocation = {};
+        for (const s of schedules) {
+            if (!byLocation[s.locationId]) byLocation[s.locationId] = [];
+            byLocation[s.locationId].push(s);
+        }
+
+        let html = '';
+        for (const [locId, scheds] of Object.entries(byLocation)) {
+            const loc = locations.find(l => String(l.id) === String(locId));
+            const locName = loc ? loc.name : 'Unknown Location';
+
+            html += `<div style="font-size: 12px; font-weight: 600; color: var(--text-secondary); margin: 12px 0 6px 4px;">${Utils.escapeHTML(locName)}</div>`;
+
+            // Sort by day, then time
+            scheds.sort((a, b) => {
+                if (a.dayOfWeek !== b.dayOfWeek) return a.dayOfWeek - b.dayOfWeek;
+                return a.startTime.localeCompare(b.startTime);
+            });
+
+            for (const s of scheds) {
+                html += `
+                    <div class="schedule-item">
+                        <div class="schedule-info">
+                            <span class="schedule-name">${Utils.escapeHTML(s.name)} ${s.isActive === false ? '<span class="badge badge-inactive">Inactive</span>' : ''}</span>
+                            <span class="schedule-detail">${Utils.getDayName(s.dayOfWeek)} Â· ${Utils.formatTime(s.startTime)} â€“ ${Utils.formatTime(s.endTime)}</span>
+                        </div>
+                        <div class="schedule-actions">
+                            <button class="btn-icon" onclick="SettingsScreen.editSchedule('${s.id}')" title="Edit">âœŽ</button>
+                            <button class="btn-icon" onclick="SettingsScreen.deleteSchedule('${s.id}')" title="Delete" style="color: var(--accent-red);">âœ•</button>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        return html;
+    }
+
+    // ===== Location Form =====
+    async function showLocationForm(locationId = null) {
+        let location = null;
+        if (locationId) {
+            location = await DB.Locations.getById(locationId);
+        }
+
+        const overlay = document.createElement('div');
+        overlay.className = 'form-modal-overlay';
+        overlay.id = 'location-form-overlay';
+        overlay.innerHTML = `
+            <div class="form-modal">
+                <div class="form-modal-header">
+                    <h3 class="form-modal-title">${location ? 'Edit Location' : 'Add Location'}</h3>
+                    <button class="form-modal-close" onclick="document.getElementById('location-form-overlay').remove()">âœ•</button>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Location Name *</label>
+                    <input type="text" class="form-input" id="loc-name" value="${location ? Utils.escapeHTML(location.name) : ''}" placeholder="e.g., Downtown Dojo">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Address (optional)</label>
+                    <input type="text" class="form-input" id="loc-address" value="${location ? Utils.escapeHTML(location.address || '') : ''}" placeholder="123 Main St">
+                </div>
+                <div class="form-actions">
+                    <button class="btn btn-secondary" onclick="document.getElementById('location-form-overlay').remove()">Cancel</button>
+                    <button class="btn btn-gold" id="loc-save-btn">${location ? 'Save' : 'Add Location'}</button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(overlay);
+        setTimeout(() => document.getElementById('loc-name').focus(), 100);
+
+        document.getElementById('loc-save-btn').addEventListener('click', async () => {
+            const name = document.getElementById('loc-name').value.trim();
+            if (!name) { alert('Name is required.'); return; }
+
+            if (location) {
+                await DB.Locations.update({ ...location, name, address: document.getElementById('loc-address').value.trim() });
+            } else {
+                await DB.Locations.add({ name, address: document.getElementById('loc-address').value.trim() });
+            }
+
+            overlay.remove();
+            await render();
+        });
+
+        overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
+    }
+
+    // ===== Schedule Form =====
+    async function showScheduleForm(scheduleId = null, locationsOverride = null) {
+        let schedule = null;
+        if (scheduleId) {
+            schedule = await DB.Schedules.getById(scheduleId);
+        }
+
+        const locations = locationsOverride || await DB.Locations.getAll();
+
+        const overlay = document.createElement('div');
+        overlay.className = 'form-modal-overlay';
+        overlay.id = 'schedule-form-overlay';
+        overlay.innerHTML = `
+            <div class="form-modal">
+                <div class="form-modal-header">
+                    <h3 class="form-modal-title">${schedule ? 'Edit Class Schedule' : 'Add Class Schedule'}</h3>
+                    <button class="form-modal-close" onclick="document.getElementById('schedule-form-overlay').remove()">âœ•</button>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Class Name *</label>
+                    <input type="text" class="form-input" id="sched-name" value="${schedule ? Utils.escapeHTML(schedule.name) : ''}" placeholder="e.g., Adult Judo, Kids Beginner">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Location *</label>
+                    <select class="form-select" id="sched-location">
+                        ${locations.map(l => `<option value="${l.id}" ${schedule && schedule.locationId === l.id ? 'selected' : ''}>${Utils.escapeHTML(l.name)}</option>`).join('')}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Day of Week *</label>
+                    <select class="form-select" id="sched-day">
+                        ${Utils.DAY_NAMES.map((name, i) => `<option value="${i}" ${schedule && schedule.dayOfWeek === i ? 'selected' : ''}>${name}</option>`).join('')}
+                    </select>
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <div class="form-group" style="flex: 1;">
+                        <label class="form-label">Start Time *</label>
+                        <input type="time" class="form-input" id="sched-start" value="${schedule ? schedule.startTime : '18:00'}">
+                    </div>
+                    <div class="form-group" style="flex: 1;">
+                        <label class="form-label">End Time *</label>
+                        <input type="time" class="form-input" id="sched-end" value="${schedule ? schedule.endTime : '19:30'}">
+                    </div>
+                </div>
+                ${schedule ? `
+                    <div class="form-group">
+                        <label class="form-label">Status</label>
+                        <select class="form-select" id="sched-active">
+                            <option value="true" ${schedule.isActive !== false ? 'selected' : ''}>Active</option>
+                            <option value="false" ${schedule.isActive === false ? 'selected' : ''}>Inactive</option>
+                        </select>
+                    </div>
+                ` : ''}
+                <div class="form-actions">
+                    <button class="btn btn-secondary" onclick="document.getElementById('schedule-form-overlay').remove()">Cancel</button>
+                    <button class="btn btn-gold" id="sched-save-btn">${schedule ? 'Save Changes' : 'Add Class'}</button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(overlay);
+        setTimeout(() => document.getElementById('sched-name').focus(), 100);
+
+        document.getElementById('sched-save-btn').addEventListener('click', async () => {
+            const name = document.getElementById('sched-name').value.trim();
+            const locationId = document.getElementById('sched-location').value;
+            const dayOfWeek = Number(document.getElementById('sched-day').value);
+            const startTime = document.getElementById('sched-start').value;
+            const endTime = document.getElementById('sched-end').value;
+
+            if (!name || !startTime || !endTime) { alert('Please fill in all required fields.'); return; }
+
+            if (schedule) {
+                const activeSelect = document.getElementById('sched-active');
+                await DB.Schedules.update({
+                    ...schedule,
+                    name, locationId, dayOfWeek, startTime, endTime,
+                    isActive: activeSelect.value === 'true'
+                });
+            } else {
+                await DB.Schedules.add({ name, locationId, dayOfWeek, startTime, endTime });
+            }
+
+            overlay.remove();
+            await render();
+        });
+
+        overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
+    }
+
+    // ===== PIN Handling =====
+    function showPinModal(onSuccess, onCancel) {
+        let pinValue = '';
+        const modal = document.getElementById('pin-modal');
+        const dots = document.querySelectorAll('.pin-dot');
+        const errorEl = document.getElementById('pin-error');
+
+        modal.classList.remove('hidden');
+        errorEl.classList.add('hidden');
+        pinValue = '';
+        dots.forEach(d => d.classList.remove('filled'));
+
+        function updateDots() {
+            dots.forEach((d, i) => {
+                d.classList.toggle('filled', i < pinValue.length);
+            });
+        }
+
+        async function handleKey(key) {
+            errorEl.classList.add('hidden');
+
+            if (key === 'clear') {
+                pinValue = '';
+                updateDots();
+                return;
+            }
+
+            if (key === 'back') {
+                pinValue = pinValue.slice(0, -1);
+                updateDots();
+                return;
+            }
+
+            if (pinValue.length >= 4) return;
+
+            pinValue += key;
+            updateDots();
+
+            if (pinValue.length === 4) {
+                const storedPin = await DB.Settings.getPin();
+                if (pinValue === storedPin) {
+                    modal.classList.add('hidden');
+                    cleanup();
+                    if (onSuccess) onSuccess();
+                } else {
+                    errorEl.classList.remove('hidden');
+                    pinValue = '';
+                    setTimeout(() => updateDots(), 300);
+                }
+            }
+        }
+
+        // Wire up keys
+        const keyHandler = (e) => {
+            const key = e.target.dataset.key;
+            if (key) handleKey(key);
+        };
+
+        const pad = modal.querySelector('.pin-pad');
+        pad.addEventListener('click', keyHandler);
+
+        // Keyboard support
+        const kbHandler = (e) => {
+            if (e.key >= '0' && e.key <= '9') handleKey(e.key);
+            else if (e.key === 'Backspace') handleKey('back');
+            else if (e.key === 'Escape') {
+                modal.classList.add('hidden');
+                cleanup();
+                if (onCancel) onCancel(); else App.navigate('signin');
+            }
+        };
+        document.addEventListener('keydown', kbHandler);
+
+        // Cancel button
+        const cancelBtn = document.getElementById('pin-cancel-btn');
+        const cancelHandler = () => {
+            modal.classList.add('hidden');
+            cleanup();
+            if (onCancel) onCancel(); else App.navigate('signin');
+        };
+        cancelBtn.addEventListener('click', cancelHandler);
+
+        function cleanup() {
+            pad.removeEventListener('click', keyHandler);
+            document.removeEventListener('keydown', kbHandler);
+            cancelBtn.removeEventListener('click', cancelHandler);
+        }
+    }
+
+    function promptPin() {
+        showPinModal(() => {
+            isAuthenticated = true;
+            render();
+        });
+    }
+
+    async function checkAndPromptPin(onSuccess, onCancel) {
+        const hasPin = await DB.Settings.getPin();
+        if (hasPin && !isAuthenticated) {
+            showPinModal(() => {
+                isAuthenticated = true;
+                onSuccess();
+            }, onCancel);
+        } else {
+            onSuccess();
+        }
+    }
+
+    async function changePin() {
+        const newPin = prompt('Enter a new 4-digit PIN:');
+        if (newPin === null) return;
+        if (!/^\d{4}$/.test(newPin)) {
+            alert('PIN must be exactly 4 digits.');
+            return;
+        }
+        await DB.Settings.setPin(newPin);
+        alert('PIN updated successfully.');
+        await render();
+    }
+
+    async function removePin() {
+        if (confirm('Remove PIN protection? Anyone will be able to access settings.')) {
+            await DB.Settings.set('pin', null);
+            isAuthenticated = false;
+            await render();
+        }
+    }
+
+    // ===== Delete Handlers =====
+    async function deleteLocation(id) {
+        const loc = await DB.Locations.getById(id);
+        if (confirm(`Delete "${loc.name}"? Class schedules at this location will also be removed.`)) {
+            // Remove related schedules
+            const schedules = await DB.Schedules.getByLocation(id);
+            for (const s of schedules) {
+                await DB.Schedules.remove(s.id);
+            }
+
+            await DB.Locations.remove(id);
+
+            // If this was the current location, clear it
+            const currentLocId = await DB.Settings.getCurrentLocationId();
+            if (currentLocId === id) {
+                await DB.Settings.setCurrentLocationId(null);
+                document.getElementById('header-location-name').textContent = 'No Location Set';
+            }
+
+            await render();
+        }
+    }
+
+    async function deleteSchedule(id) {
+        const sched = await DB.Schedules.getById(id);
+        if (confirm(`Delete "${sched.name}" on ${Utils.getDayName(sched.dayOfWeek)}?`)) {
+            await DB.Schedules.remove(id);
+            await render();
+        }
+    }
+
+    // ===== Data Import/Export =====
+    async function exportData() {
+        const data = await DB.DataIO.exportAll();
+        Utils.downloadJSON(data, `judo_club_backup_${Utils.todayStr()}.json`);
+    }
+
+    async function exportAttendanceCSV() {
+        const attendance = await DB.Attendance.getAll();
+        // Sort by date/time descending
+        attendance.sort((a, b) => new Date(b.signInTime) - new Date(a.signInTime));
+        const csv = Utils.getAttendanceCSV(attendance);
+        Utils.downloadCSV(csv, `judo_attendance_${Utils.todayStr()}.csv`);
+    }
+
+    async function importData(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        if (!confirm('This will replace ALL existing data. Are you sure?')) {
+            event.target.value = '';
+            return;
+        }
+
+        try {
+            const text = await Utils.readFileAsText(file);
+            const data = JSON.parse(text);
+            await DB.DataIO.importAll(data);
+            alert('Data imported successfully!');
+            event.target.value = '';
+            await render();
+        } catch (err) {
+            alert('Error importing data: ' + err.message);
+        }
+    }
+
+    // Reset auth when navigating away
+    function resetAuth() {
+        // We keep auth for the session
+    }
+
+    async function deduplicateMembers() {
+        if (!confirm('This will merge all members with identical names and birthdays.\n\nAttendance counts will be combined. This action cannot be undone.\n\nProceed?')) {
+            return;
+        }
+
+        try {
+            const btn = document.querySelector('[onclick="SettingsScreen.deduplicateMembers()"]');
+            const originalHtml = btn.innerHTML;
+            btn.style.pointerEvents = 'none';
+            btn.innerHTML = '<div class="settings-item-left"><span class="settings-item-title">Cleaning...</span></div>';
+
+            const count = await DB.Members.deduplicate();
+            
+            btn.innerHTML = originalHtml;
+            btn.style.pointerEvents = 'auto';
+
+            if (count > 0) {
+                alert(`âœ… Successfully merged ${count} duplicate records! Your member list is now clean.`);
+            } else {
+                alert('No duplicates found. Your member list is already clean! âœ¨');
+            }
+            render();
+        } catch (err) {
+            console.error('Deduplication error:', err);
+            alert('Error during cleanup: ' + err.message);
+            render();
+        }
+    }
+
+    async function setAppPassword() {
+        const current = await DB.Settings.get('appPassword');
+        const newPass = prompt(current ? 'Enter new app password:' : 'Set a password to protect app access:\n(Users will need this password each time they open the app)');
+        if (newPass === null) return; // cancelled
+        if (newPass.trim().length === 0) {
+            alert('Password cannot be empty.');
+            return;
+        }
+        const confirm = prompt('Confirm the password:');
+        if (confirm !== newPass) {
+            alert('Passwords do not match. Try again.');
+            return;
+        }
+        await DB.Settings.set('appPassword', newPass);
+        alert('âœ… App password has been set. It will be required next time the app opens.');
+        render();
+    }
+
+    async function removeAppPassword() {
+        if (confirm('Remove the app password? Anyone will be able to open the app.')) {
+            await DB.Settings.set('appPassword', null);
+            alert('App password removed.');
+            render();
+        }
+    }
+
+    return {
+        render,
+        promptPin,
+        checkAndPromptPin,
+        changePin,
+        removePin,
+        editLocation: showLocationForm,
+        deleteLocation,
+        editSchedule: (id) => showScheduleForm(id),
+        deleteSchedule,
+        exportData: exportData,
+        exportAttendanceCSV,
+        importData,
+        deduplicateMembers,
+        setAppPassword,
+        removeAppPassword,
+        resetAuth
+    };
+})();
+
+
+--------------------------------------------------------------------------------

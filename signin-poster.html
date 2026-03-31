@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>White Rock Judo Club — Sign-In Poster</title>
+    <style>
+        :root {
+            --primary: #e53935;
+            --secondary: #ffb300;
+            --dark: #1a1a2e;
+            --light: #ffffff;
+        }
+        
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+            background: #f0f0f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .poster {
+            width: 8.5in;
+            height: 11in;
+            background: white;
+            box-shadow: 0 0 40px rgba(0,0,0,0.1);
+            padding: 0;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .header {
+            background: var(--dark);
+            color: white;
+            padding: 50px 40px;
+            text-align: center;
+            border-bottom: 8px solid var(--primary);
+        }
+
+        .club-name {
+            font-size: 54px;
+            font-weight: 900;
+            margin: 0;
+            letter-spacing: -1.5px;
+            text-transform: uppercase;
+        }
+
+        .tagline {
+            font-size: 24px;
+            color: var(--secondary);
+            margin-top: 10px;
+            font-weight: 600;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        .content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 40px;
+            text-align: center;
+        }
+
+        .instruction {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--dark);
+            margin-bottom: 40px;
+        }
+
+        .qr-card {
+            padding: 30px;
+            background: white;
+            border: 4px solid var(--dark);
+            border-radius: 24px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+            margin-bottom: 40px;
+        }
+
+        .qr-image {
+            width: 400px;
+            height: 400px;
+            aspect-ratio: 1 / 1;
+            display: block;
+            object-fit: contain;
+        }
+
+        .url-text {
+            font-size: 20px;
+            color: #666;
+            margin-top: 20px;
+            font-family: monospace;
+            background: #f8f8f8;
+            padding: 8px 16px;
+            border-radius: 8px;
+        }
+
+        .footer {
+            background: #f8f8f8;
+            padding: 40px;
+            text-align: center;
+            border-top: 1px solid #eee;
+        }
+
+        .footer-note {
+            font-size: 18px;
+            color: #444;
+            max-width: 500px;
+            margin: 0 auto;
+            line-height: 1.5;
+        }
+
+        .badge-row {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 15px;
+        }
+
+        .badge {
+            font-size: 12px;
+            font-weight: 800;
+            background: var(--dark);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 4px;
+            text-transform: uppercase;
+        }
+
+        @media print {
+            body { background: white; }
+            .poster { box-shadow: none; width: 100%; height: 100vh; }
+            button { display: none; }
+        }
+
+        .print-btn {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <button class="print-btn" onclick="window.print()">Print to PDF</button>
+
+    <div class="poster">
+        <div class="header">
+            <h1 class="club-name">White Rock Judo</h1>
+            <div class="tagline">Attendance Sign-In</div>
+        </div>
+
+        <div class="content">
+            <div class="instruction">Scan here to Sign-In from your phone</div>
+            
+            <div class="qr-card">
+                <img src="qr_code_for_club_signin_1774923484153.png" class="qr-image" alt="QR Code">
+                <div class="url-text">whiterockjudo.netlify.app</div>
+            </div>
+
+            <div class="footer-note">
+                Please remember to sign in <strong>before</strong> your class begins. If you have any issues, please see your Sensei.
+            </div>
+            
+            <div class="badge-row">
+                <div class="badge">Professional</div>
+                <div class="badge">Safe</div>
+                <div class="badge">Efficient</div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

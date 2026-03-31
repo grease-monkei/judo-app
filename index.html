@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#1a1a2e">
+    <meta name="description" content="Judo Club Sign-In — Fast, simple attendance tracking for your dojo">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>White Rock Judo Club — Sign-In</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/png" href="images/logo.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles/main.css">
+    <link rel="stylesheet" href="styles/animations.css">
+</head>
+<body>
+    <!-- 🌊 Instant Splash Screen (Fast First Paint) -->
+    <div id="splash-screen" style="position: fixed; inset: 0; z-index: 9999; background: #1a1a2e; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 24px;">
+        <div style="position: relative;">
+            <img src="images/logo.png" alt="Loading..." style="width: 120px; height: 120px; filter: drop-shadow(0 0 20px rgba(255,255,255,0.2));">
+            <div style="position: absolute; inset: -15px; border: 4px solid var(--accent-gold, #dcba69); border-radius: 50%; border-top-color: transparent; animation: spin 0.8s linear infinite;"></div>
+        </div>
+        <div style="text-align: center;">
+            <h2 style="color: white; font-size: 18px; font-weight: 700; margin: 0; letter-spacing: 1px; text-transform: uppercase;">White Rock Judo</h2>
+            <p style="color: #64748b; font-size: 13px; margin-top: 8px; font-weight: 500;">Initializing Kiosk...</p>
+        </div>
+    </div>
+
+    <div id="app">
+        <!-- App Shell -->
+        <header id="app-header">
+            <div class="header-content">
+                <div class="header-left" onclick="App.navigate('signin')" style="cursor: pointer;" title="Back to Sign In">
+                    <img src="images/logo-white-red.png" alt="White Rock Judo Club" class="app-logo-img">
+                    <h1 class="app-title">White Rock Judo</h1>
+                </div>
+                <div class="header-right" style="display: flex; align-items: center; gap: 12px;">
+                    <button class="nav-btn" data-screen="schedule" id="nav-schedule" style="flex-direction: row; background: rgba(255,255,255,0.1); border-radius: var(--radius-sm); padding: 6px 12px; color: var(--text-primary); cursor: pointer; border: none; font-size: 14px; font-weight: 600; min-height: 0;">
+                        🗓️ Schedule
+                    </button>
+                    <button id="pwa-install-btn" class="nav-btn hidden" style="flex-direction: row; background: var(--accent-gold); border-radius: var(--radius-sm); padding: 6px 12px; color: var(--bg-primary); cursor: pointer; border: none; font-size: 13px; font-weight: 800; min-height: 0; box-shadow: 0 4px 12px var(--accent-gold-glow);">
+                        ⬇ Download App
+                    </button>
+                    <div id="header-location" class="header-location">
+                        <span class="location-dot"></span>
+                        <span id="header-location-name">No Location Set</span>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <main id="main-content">
+            <!-- Screens are rendered here by router -->
+        </main>
+
+        <nav id="bottom-nav">
+            <button class="nav-btn active" data-screen="signin" id="nav-signin">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+                <span>Sign In</span>
+            </button>
+            <button class="nav-btn" data-screen="manual" id="nav-manual">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M12 16h6"/><path d="M15 13v6"/></svg>
+                <span>Manual</span>
+            </button>
+            <button class="nav-btn" data-screen="attendance" id="nav-attendance">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                <span>Attendance</span>
+            </button>
+            <button class="nav-btn" data-screen="members" id="nav-members">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                <span>Members</span>
+            </button>
+            <button class="nav-btn" data-screen="settings" id="nav-settings">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                <span>Settings</span>
+            </button>
+        </nav>
+    </div>
+
+
+    <!-- iOS Install Guide Modal -->
+    <div id="ios-install-modal" class="modal-overlay hidden" style="align-items: flex-end; padding-bottom: env(safe-area-inset-bottom, 24px);">
+        <div class="modal-card" style="margin-bottom: 20px; position: relative;">
+            <button id="ios-install-close" style="position: absolute; right: 16px; top: 16px; background: none; border: none; color: var(--text-muted); font-size: 20px; cursor: pointer;">✕</button>
+            <h2 style="font-size: 20px; margin-bottom: 12px; text-align: center;">Install App</h2>
+            <p style="text-align: center; color: var(--text-secondary); font-size: 15px; line-height: 1.5;">
+                Get the full experience! Tap the <strong style="color: var(--text-primary);">Share</strong> icon <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin: 0 4px;"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg> at the bottom of your screen, then scroll down and tap <strong style="color: var(--text-primary);">Add to Home Screen</strong>.
+            </p>
+            <div style="text-align: center; margin-top: 16px;">
+                <span style="font-size: 32px; display: inline-block; animation: bounceDown 1s infinite;">↓</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- PIN Modal -->
+    <div id="pin-modal" class="modal-overlay hidden">
+        <div class="modal-card pin-modal-card">
+            <h2>🔒 Enter PIN</h2>
+            <p class="pin-subtitle">Settings are PIN protected</p>
+            <div class="pin-display" id="pin-display">
+                <span class="pin-dot"></span>
+                <span class="pin-dot"></span>
+                <span class="pin-dot"></span>
+                <span class="pin-dot"></span>
+            </div>
+            <p id="pin-error" class="pin-error hidden">Incorrect PIN</p>
+            <div class="pin-pad">
+                <button class="pin-key" data-key="1">1</button>
+                <button class="pin-key" data-key="2">2</button>
+                <button class="pin-key" data-key="3">3</button>
+                <button class="pin-key" data-key="4">4</button>
+                <button class="pin-key" data-key="5">5</button>
+                <button class="pin-key" data-key="6">6</button>
+                <button class="pin-key" data-key="7">7</button>
+                <button class="pin-key" data-key="8">8</button>
+                <button class="pin-key" data-key="9">9</button>
+                <button class="pin-key pin-key-clear" data-key="clear">✕</button>
+                <button class="pin-key" data-key="0">0</button>
+                <button class="pin-key pin-key-back" data-key="back">⌫</button>
+            </div>
+            <button class="pin-cancel-btn" id="pin-cancel-btn">Cancel</button>
+        </div>
+    </div>
+
+    <!-- App Lock Screen -->
+    <div id="app-lock-screen" class="app-lock-screen hidden">
+        <div class="app-lock-card">
+            <img src="images/logo.png" alt="White Rock Judo Club" class="app-lock-logo">
+            <h2 class="app-lock-title">White Rock Judo Club</h2>
+            <p class="app-lock-subtitle">Enter password to continue</p>
+            <div class="app-lock-form">
+                <input type="password" id="app-lock-input" class="form-input app-lock-input" placeholder="Password" autocomplete="off">
+                <p id="app-lock-error" class="pin-error hidden">Incorrect password</p>
+                <button id="app-lock-submit" class="btn btn-gold app-lock-btn">Unlock</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDK (CDN) -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+
+    <!-- Scripts -->
+    <script src="js/firebase-config.js"></script>
+    <script src="js/db.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/seed.js"></script>
+    <script src="js/member-import.js"></script>
+    <script src="js/screens/signin.js"></script>
+    <script src="js/screens/attendance.js"></script>
+    <script src="js/screens/manual.js"></script>
+    <script src="js/screens/members.js"></script>
+    <script src="js/screens/settings.js"></script>
+    <script src="js/screens/schedule.js"></script>
+    <script src="js/app.js"></script>
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('./sw.js')
+            .catch(err => console.log('SW registration failed', err));
+        });
+      }
+    </script>
+</body>
+</html>
