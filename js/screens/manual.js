@@ -204,7 +204,8 @@ const ManualScreen = (() => {
                     classScheduleId: schedule.id,
                     locationId: schedule.locationId || '',
                     locationName: location ? location.name : '',
-                    date: selectedDate
+                    date: selectedDate,
+                    signInTime: new Date().toISOString()
                 });
                 await DB.Members.incrementAttendance(member.id);
             }

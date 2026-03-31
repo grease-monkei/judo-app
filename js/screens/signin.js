@@ -379,7 +379,9 @@ const SignInScreen = (() => {
 
     async function undoSignIn() {
         if (!lastSignInRecord) return;
+        const memberId = lastSignInRecord.memberId;
         await DB.Attendance.remove(lastSignInRecord.id);
+        await DB.Members.decrementAttendance(memberId);
         lastSignInRecord = null;
         if (lastSignInTimeout) clearTimeout(lastSignInTimeout);
         // Invalidate cache after removal

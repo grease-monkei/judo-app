@@ -1,4 +1,4 @@
-const CACHE_NAME = 'wr-judo-v34'; // Bumped version to force cache refresh on deploy
+const CACHE_NAME = 'wr-judo-v35'; // Bumped version to force cache refresh on deploy
 
 const ASSETS_TO_CACHE = [
   './',

@@ -169,7 +169,7 @@ const AttendanceScreen = (() => {
         // Sort by date descending, then time descending
         records.sort((a, b) => {
             if (a.date !== b.date) return b.date.localeCompare(a.date);
-            return b.signInTime - a.signInTime;
+            return String(b.signInTime).localeCompare(String(a.signInTime));
         });
 
         return records;
@@ -291,6 +291,7 @@ const AttendanceScreen = (() => {
         }
 
         await DB.Attendance.remove(recordId);
+        if (memberId) await DB.Members.decrementAttendance(memberId);
 
         // FIX: Invalidate the member cache after a write so the next search
         // picks up any member data changes that might have occurred.
