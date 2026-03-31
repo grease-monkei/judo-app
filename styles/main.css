@@ -1249,39 +1249,7 @@ input[type="date"] {
 
 /* ===== RESPONSIVE ===== */
 @media (max-width: 480px) {
-    .app-title {
-        display: none; /* Hide title to save space */
-    }
-
-    #pwa-install-btn {
-        display: none !important; /* Hide secondary download button */
-    }
-
-    .header-right {
-        gap: 6px !important;
-    }
-
-    .header-clock {
-        font-size: 13px;
-        padding: 4px 10px;
-        min-width: 70px;
-    }
-
-    .header-location {
-        font-size: 11px;
-        padding: 4px 10px;
-        max-width: 120px;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-
-    #main-content {
-        padding: 12px;
-    }
-
     .search-input {
-        font-size: 16px;
         padding: 14px 18px 14px 48px;
     }
 
@@ -1424,4 +1392,34 @@ input[type="date"] {
     cursor: not-allowed;
     background: rgba(255,255,255,0.02) !important;
     pointer-events: none;
+}
+
+/* === Final Mobile Polish (Ensures no crunch/overlap) === */
+@media (max-width: 480px) {
+    #app-header .app-title {
+        display: none !important;
+    }
+
+    #app-header #pwa-install-btn {
+        display: none !important;
+    }
+
+    #app-header .header-right {
+        gap: 8px !important;
+    }
+
+    #app-header .header-clock {
+        font-size: 13px !important;
+        padding: 4px 10px !important;
+        min-width: 70px !important;
+    }
+
+    #app-header .header-location {
+        font-size: 11px !important;
+        padding: 4px 10px !important;
+        max-width: 100px !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+    }
 }
