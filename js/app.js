@@ -49,7 +49,8 @@ const App = (() => {
         if (locId) {
             const loc = await DB.Locations.getById(locId);
             if (loc) {
-                document.getElementById('header-location-name').textContent = loc.name;
+                const locEl = document.getElementById('header-location-name');
+                if (locEl) locEl.textContent = loc.name;
             }
         }
 
