@@ -40,7 +40,7 @@ const ManualScreen = (() => {
                 <div class="manual-config-card card mb-24">
                     <div class="form-group">
                         <label class="form-label">Step 1: Pick Date</label>
-                        <input type="date" class="form-input" id="manual-date" value="${selectedDate}">
+                        <input type="date" class="form-input" id="manual-date" value="${selectedDate}" max="${Utils.todayStr()}">
                     </div>
                     
                     <div class="form-group">
@@ -185,6 +185,11 @@ const ManualScreen = (() => {
 
     async function bulkSubmit() {
         if (pendingMembers.length === 0 || !selectedClassId) return;
+
+        if (selectedDate > Utils.todayStr()) {
+            alert('Cannot sign in members for a future date. Please select today or a past date.');
+            return;
+        }
 
         const schedule = await DB.Schedules.getById(selectedClassId);
         if (!schedule) return;
