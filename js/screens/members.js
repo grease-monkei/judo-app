@@ -154,6 +154,9 @@ const MembersScreen = (() => {
     let onSaveCallback = null;
 
     async function showMemberForm(memberId = null, onSuccess = null) {
+        // Clear any existing modals
+        document.querySelectorAll('.modal-overlay').forEach(el => el.remove());
+
         onSaveCallback = onSuccess;
         const member = memberId ? await DB.Members.getById(memberId) : null;
         const title = member ? 'Edit Member' : 'Add New Member';
@@ -197,7 +200,7 @@ const MembersScreen = (() => {
                 </div>
 
                 <div style="display: flex; gap: 8px; margin-top: 8px;">
-                    <button class="btn btn-gold" style="flex: 1;" onclick="MembersScreen.saveMember('${memberId || ''}')">
+                    <button class="btn btn-gold" style="flex: 1;" onclick="MembersScreen.saveMember('${memberId || ''}', this)">
                         ${member ? 'Save Changes' : 'Add Member'}
                     </button>
                     <button class="btn btn-secondary" onclick="this.closest('.modal-overlay').remove()">Cancel</button>
@@ -208,13 +211,24 @@ const MembersScreen = (() => {
         document.body.appendChild(overlay);
         setTimeout(() => document.getElementById('member-first-name')?.focus(), 100);
 
+        // Handle Enter and Escape keys
+        overlay.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                if (e.target.tagName === 'BUTTON' || e.target.tagName === 'SELECT') return;
+                e.preventDefault();
+                saveMember(memberId || '', overlay);
+            } else if (e.key === 'Escape') {
+                overlay.remove();
+            }
+        });
+
         overlay.addEventListener('click', (e) => {
             if (e.target === overlay) overlay.remove();
         });
     }
 
 
-    async function saveMember(memberId) {
+    async function saveMember(memberId, triggerElement = null) {
         const firstName = document.getElementById('member-first-name')?.value.trim();
         const lastName = document.getElementById('member-last-name')?.value.trim();
         const belt = document.getElementById('member-belt')?.value;
@@ -229,27 +243,36 @@ const MembersScreen = (() => {
 
         const data = { firstName, lastName, belt, birthday, email, phone };
 
+        let resultMember;
         if (memberId) {
             const existing = await DB.Members.getById(memberId);
-            await DB.Members.update({ ...existing, ...data });
+            resultMember = { ...existing, ...data };
+            await DB.Members.update(resultMember);
         } else {
             const currentLocationId = await DB.Settings.getCurrentLocationId();
-            const newMember = await DB.Members.add({ 
+            resultMember = await DB.Members.add({ 
                 ...data, 
                 isActive: true, 
                 attendanceCount: 0,
                 primaryLocationId: currentLocationId 
             });
-            
-            if (onSaveCallback) {
-                onSaveCallback(newMember);
-                onSaveCallback = null;
-            }
         }
 
-        document.querySelector('.modal-overlay')?.remove();
+        // Close the modal immediately
+        const overlay = (triggerElement && triggerElement.classList.contains('modal-overlay'))
+            ? triggerElement
+            : triggerElement?.closest?.('.modal-overlay')
+            || document.querySelector('.modal-overlay');
+        
+        if (overlay) overlay.remove();
+
         if (App.getCurrentScreen() === 'members') {
             await renderList();
+        }
+
+        if (onSaveCallback) {
+            onSaveCallback(resultMember);
+            onSaveCallback = null;
         }
     }
 

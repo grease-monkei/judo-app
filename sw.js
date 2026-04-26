@@ -1,4 +1,4 @@
-const CACHE_NAME = 'wr-judo-v37'; // Bumped version to force cache refresh on deploy
+const CACHE_NAME = 'wr-judo-v39'; // v39: auto-update + no-cache headers for sw.js
 
 const ASSETS_TO_CACHE = [
   './',

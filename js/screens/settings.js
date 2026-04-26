@@ -397,6 +397,7 @@ const SettingsScreen = (() => {
 
     // ===== Location CRUD =====
     function showLocationForm(existingLoc = null) {
+        document.querySelectorAll('.modal-overlay').forEach(el => el.remove());
         const overlay = document.createElement('div');
         overlay.className = 'modal-overlay';
         overlay.innerHTML = `
@@ -411,7 +412,7 @@ const SettingsScreen = (() => {
                     <input type="text" class="form-input" id="loc-address" value="${Utils.escapeHTML(existingLoc?.address || '')}" placeholder="Optional">
                 </div>
                 <div style="display: flex; gap: 8px; margin-top: 8px;">
-                    <button class="btn btn-gold" style="flex:1;" onclick="SettingsScreen.saveLocation('${existingLoc?.id || ''}')">Save</button>
+                    <button class="btn btn-gold" style="flex:1;" onclick="SettingsScreen.saveLocation('${existingLoc?.id || ''}', this)">Save</button>
                     <button class="btn btn-secondary" onclick="this.closest('.modal-overlay').remove()">Cancel</button>
                 </div>
             </div>
@@ -419,10 +420,19 @@ const SettingsScreen = (() => {
         document.body.appendChild(overlay);
         setTimeout(() => document.getElementById('loc-name')?.focus(), 100);
         overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+        overlay.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                if (e.target.tagName === 'BUTTON' || e.target.tagName === 'SELECT') return;
+                e.preventDefault();
+                saveLocation(existingLoc?.id || '', overlay);
+            } else if (e.key === 'Escape') {
+                overlay.remove();
+            }
+        });
     }
 
 
-    async function saveLocation(locId) {
+    async function saveLocation(locId, triggerElement = null) {
         const name = document.getElementById('loc-name')?.value.trim();
         const address = document.getElementById('loc-address')?.value.trim();
         if (!name) { alert('Location name is required.'); return; }
@@ -457,6 +467,7 @@ const SettingsScreen = (() => {
 
     // ===== Schedule CRUD =====
     async function showScheduleForm(locations, existingSched = null) {
+        document.querySelectorAll('.modal-overlay').forEach(el => el.remove());
         const overlay = document.createElement('div');
         overlay.className = 'modal-overlay';
         overlay.innerHTML = `
@@ -487,17 +498,26 @@ const SettingsScreen = (() => {
                     <input type="time" class="form-input" id="sched-end" value="${existingSched?.endTime || ''}">
                 </div>
                 <div style="display: flex; gap: 8px; margin-top: 8px;">
-                    <button class="btn btn-gold" style="flex:1;" onclick="SettingsScreen.saveSchedule('${existingSched?.id || ''}')">Save</button>
+                    <button class="btn btn-gold" style="flex:1;" onclick="SettingsScreen.saveSchedule('${existingSched?.id || ''}', this)">Save</button>
                     <button class="btn btn-secondary" onclick="this.closest('.modal-overlay').remove()">Cancel</button>
                 </div>
             </div>
         `;
         document.body.appendChild(overlay);
         overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+        overlay.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                if (e.target.tagName === 'BUTTON' || e.target.tagName === 'SELECT') return;
+                e.preventDefault();
+                saveSchedule(existingSched?.id || '', overlay);
+            } else if (e.key === 'Escape') {
+                overlay.remove();
+            }
+        });
     }
 
 
-    async function saveSchedule(schedId) {
+    async function saveSchedule(schedId, triggerElement = null) {
         const name = document.getElementById('sched-name')?.value.trim();
         const locationId = document.getElementById('sched-location')?.value;
         const dayOfWeek = parseInt(document.getElementById('sched-day')?.value);

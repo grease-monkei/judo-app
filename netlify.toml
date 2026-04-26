@@ -1,3 +1,21 @@
 [build]
     command = ""
     publish = "."
+
+# Never cache the service worker — browsers need to always get the latest
+# version to detect updates and refresh the app
+[[headers]]
+  for = "/sw.js"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"
+
+# Also prevent caching index.html so the SW registration code is always fresh
+[[headers]]
+  for = "/index.html"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"
+
+[[headers]]
+  for = "/200.html"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"

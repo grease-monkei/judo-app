@@ -236,7 +236,13 @@ const Utils = (() => {
     }
 
     function todayStr() {
-        const d = new Date();
+        return dateStr(new Date());
+    }
+
+    /**
+     * Convert any Date object to a YYYY-MM-DD string
+     */
+    function dateStr(d) {
         const y = d.getFullYear();
         const m = String(d.getMonth() + 1).padStart(2, '0');
         const day = String(d.getDate()).padStart(2, '0');
@@ -364,6 +370,7 @@ const Clock = (() => {
         getDayName,
         getDayShort,
         todayStr,
+        dateStr,
         downloadJSON,
         getAttendanceCSV,
         downloadCSV,

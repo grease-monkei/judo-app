@@ -165,7 +165,31 @@
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
           navigator.serviceWorker.register('./sw.js')
+            .then(reg => {
+              // Check for updates immediately on every page load
+              reg.update();
+
+              // When a new service worker is found, reload to get fresh code
+              reg.addEventListener('updatefound', () => {
+                const newWorker = reg.installing;
+                if (newWorker) {
+                  newWorker.addEventListener('statechange', () => {
+                    if (newWorker.state === 'activated') {
+                      // New SW activated — reload to serve fresh assets
+                      console.log('🔄 New app version detected — reloading...');
+                      window.location.reload();
+                    }
+                  });
+                }
+              });
+            })
             .catch(err => console.log('SW registration failed', err));
+
+          // Also listen for the controlling SW to change (skipWaiting + claim)
+          navigator.serviceWorker.addEventListener('controllerchange', () => {
+            console.log('🔄 Service worker updated — reloading...');
+            window.location.reload();
+          });
         });
       }
     </script>
